@@ -78,7 +78,7 @@ class WeatherViewController: UIViewController {
     }
     
     private func handleFailure(error: Error) {
-        showErrorAlert(message: error.localizedDescription)
+        showTipAlert(title: "Error", message: error.localizedDescription)
         hideSkeleton()
     }
     // 更新图表数据 (WeatherViewController 扩展)
@@ -107,6 +107,7 @@ class WeatherViewController: UIViewController {
         xAxis.granularity = 3600
         xAxis.labelRotationAngle = -60// 倾斜标签避免重叠
         xAxis.avoidFirstLastClippingEnabled = true
+        xAxis.labelCount = 24
         xAxis.spaceMin = 0.5 // 左侧额外空间（数值量）
         xAxis.spaceMax = 0.5 // 右侧额外空间
         chartView.setExtraOffsets(left: -20, top: 0, right: 20, bottom: 40)
@@ -124,11 +125,14 @@ class WeatherViewController: UIViewController {
     }
     
     // 显示错误弹窗并添加重试按钮
-    private func showErrorAlert(message: String) {
-        let alert = UIAlertController(title: "Error", message: message, preferredStyle: .alert)
+    private func showTipAlert(title:String,message: String) {
+        let alert = UIAlertController(title: title, message: message, preferredStyle: .alert)
         alert.addAction(UIAlertAction(title: "Retry", style: .default) { [weak self] _ in
             guard let `self` = self else {return }
-            self.locationService?.startUpdatingLocation()
+            if (title == "Error"){
+                self.locationService?.startUpdatingLocation()
+            }
+       
         })
         alert.addAction(UIAlertAction(title: "Cancel", style: .cancel))
         present(alert, animated: true)
@@ -186,9 +190,9 @@ extension WeatherViewController: LocationServiceDelegate {
             case .permissionDenied:
                 self.showPermissionAlert()
             case .unavailable:
-                self.showErrorAlert(message: "暂时无法获取位置信息，请检查网络或稍后重试")
+                self.showTipAlert(title: "Error",message: "暂时无法获取位置信息，请检查网络或稍后重试")
             case .generic(let underlyingError):
-                self.showErrorAlert(message: "定位错误: \(underlyingError.localizedDescription)")
+                self.showTipAlert(title: "Error",message: "定位错误: \(underlyingError.localizedDescription)")
             }
         }
     }
@@ -233,7 +237,7 @@ enum LocationError: Error, LocalizedError {
 extension  WeatherViewController : ChartViewDelegate{
     func chartValueSelected(_ chartView: ChartViewBase, entry: ChartDataEntry, highlight: Highlight) {
         Logger.debug("\(entry.x)\(entry.y)")
-        let  messageTip = DateFormatter.formatTimestampToDate(timestamp: entry.x,dateformat: "yyyy-MM-dd'T'HH:mm")
-        showErrorAlert(message: "\(messageTip) - 温度:\(entry.y)")
+        let  messageTip = DateFormatter.formatTimestampToDate(timestamp: entry.x,dateformat: "yyyy-MM-dd HH:mm:ss")
+        showTipAlert(title: "Tip",message: "\(messageTip) - 温度:\(entry.y)")
     }
 }
