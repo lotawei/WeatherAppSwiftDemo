@@ -32,10 +32,9 @@ final class NetworkService: NetworkServiceProtocol {
         request.httpMethod = "GET"
         request.timeoutInterval = 15
         request.setValue("application/json", forHTTPHeaderField: "Accept")
-        // 打印请求元数据（过滤敏感参数）
         logNetworkEvent(.requestSent(request))
         
-        URLSession.shared.dataTask(with: url) { [weak self] data, response, error in
+        session.dataTask(with: url) { [weak self] data, response, error in
             guard let `self` = self else {return }
             let responseDate = Date()
             let latency = responseDate.timeIntervalSince(requestDate)
@@ -80,7 +79,6 @@ enum NetworkError: Error {
 
 // MARK: - 安全日志基础设施
 private extension NetworkService {
-    /// 网络事件类型（结构化日志）
     enum NetworkEvent {
         case invalidURL(String)
         case requestSent(URLRequest)
@@ -93,7 +91,6 @@ private extension NetworkService {
         case decodeFailed(Error)
     }
     
-    /// 安全日志输出方法
     func logNetworkEvent(_ event: NetworkEvent,
                          latency: TimeInterval? = nil) {
 #if DEBUG
